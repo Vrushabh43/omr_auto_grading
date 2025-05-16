@@ -14,11 +14,27 @@
         border: 2px solid #222;
         cursor: none;
         max-height: 85vh;
+        max-width: 95vw;
         background: #fff;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         image-rendering: -webkit-optimize-contrast;
         image-rendering: crisp-edges;
         image-rendering: pixelated;
+        width: auto;
+        height: auto;
+      }
+      .canvas-container {
+        width: fit-content;
+        position: relative;
+        margin: 0 auto;
+        overflow: visible;
+      }
+      .canvas-info {
+        position: absolute;
+        top: -25px;
+        left: 0;
+        font-size: 12px;
+        color: #666;
       }
       #coords {
         white-space: pre;
@@ -116,6 +132,9 @@
 
     <div class="control-panel">
       <input type="file" id="upload" accept="image/*" />
+      <div class="image-info" style="margin-top: 5px; color: #666">
+        Recommended image size: 1029 x 1500 pixels
+      </div>
 
       <div class="section-controls">
         <label for="currentSection">Current Section:</label>
@@ -138,8 +157,8 @@
         </select>
 
         <label for="circleRadius">Circle Size:</label>
-        <input type="range" id="circleRadius" min="1" max="50" value="5" />
-        <span id="radiusValue">5</span>px
+        <input type="range" id="circleRadius" min="1" max="50" value="11" />
+        <span id="radiusValue">11</span>px
       </div>
 
       <div style="margin-top: 15px" id="questionControls">
@@ -193,7 +212,12 @@
 
     <div class="main-content">
       <div class="left-panel">
-        <canvas id="canvas"></canvas>
+        <div class="canvas-container">
+          <div class="canvas-info">
+            Image size: <span id="imageDimensions">No image loaded</span>
+          </div>
+          <canvas id="canvas"></canvas>
+        </div>
       </div>
 
       <div class="right-panel">
@@ -231,6 +255,9 @@
       let currentQuestion = 1;
       let currentDigit = 1;
       let currentOption = 0;
+
+      const FIXED_WIDTH = 1029;
+      const FIXED_HEIGHT = 1500;
 
       // Hide question controls initially
       questionControls.style.display = "none";
@@ -286,69 +313,70 @@
         redrawCanvas();
       });
 
-      // Fix canvas DPI scaling
+      // Update fixCanvasDPI function
       function fixCanvasDPI() {
         const dpr = window.devicePixelRatio || 1;
         const rect = canvas.getBoundingClientRect();
 
-        // Set display size
-        canvas.style.width = rect.width + "px";
-        canvas.style.height = rect.height + "px";
-
-        // Set actual size in memory
+        // Set the actual size in memory
         canvas.width = rect.width * dpr;
         canvas.height = rect.height * dpr;
 
-        // Scale context to ensure correct drawing operations
+        // Scale all drawing operations by the dpr
         ctx.scale(dpr, dpr);
+
+        // Enable image smoothing for better quality
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
       }
 
-      // Image upload handler
+      // Update image upload handler
       upload.addEventListener("change", (e) => {
         const file = e.target.files[0];
         const reader = new FileReader();
         reader.onload = function (event) {
           image.onload = () => {
             // Store original dimensions
-            originalWidth = image.width;
-            originalHeight = image.height;
+            originalWidth = FIXED_WIDTH;
+            originalHeight = FIXED_HEIGHT;
 
+            // Calculate scaling to fit in viewport while maintaining aspect ratio
             const maxHeight = window.innerHeight * 0.85;
             const maxWidth = window.innerWidth * 0.7;
 
-            let newWidth = image.width;
-            let newHeight = image.height;
+            // Calculate scale to fit either width or height
+            const scaleWidth = maxWidth / FIXED_WIDTH;
+            const scaleHeight = maxHeight / FIXED_HEIGHT;
+            const scale = Math.min(scaleWidth, scaleHeight);
 
-            // Maintain aspect ratio while scaling
-            const aspectRatio = image.width / image.height;
+            // Set canvas display size
+            const displayWidth = Math.round(FIXED_WIDTH * scale);
+            const displayHeight = Math.round(FIXED_HEIGHT * scale);
 
-            if (newHeight > maxHeight) {
-              newHeight = maxHeight;
-              newWidth = newHeight * aspectRatio;
-            }
-
-            if (newWidth > maxWidth) {
-              newWidth = maxWidth;
-              newHeight = newWidth / aspectRatio;
-            }
-
-            // Set canvas size
-            canvas.style.width = newWidth + "px";
-            canvas.style.height = newHeight + "px";
+            // Set canvas size directly
+            canvas.style.width = `${displayWidth}px`;
+            canvas.style.height = `${displayHeight}px`;
 
             // Fix DPI scaling
             fixCanvasDPI();
 
-            // Calculate scale factors
-            scaleX = canvas.width / originalWidth;
-            scaleY = canvas.height / originalHeight;
+            // Calculate scale factors for coordinate conversion
+            scaleX = canvas.width / FIXED_WIDTH;
+            scaleY = canvas.height / FIXED_HEIGHT;
 
-            // Enable image smoothing for better quality
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = "high";
+            // Update image dimensions display
+            document.getElementById(
+              "imageDimensions"
+            ).textContent = `${FIXED_WIDTH} x ${FIXED_HEIGHT} pixels (Display: ${displayWidth} x ${displayHeight})`;
 
-            // Draw the image
+            // Clear the canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw the image with proper scaling
             ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+            // Redraw any existing markers
+            redrawCanvas();
           };
           image.src = event.target.result;
         };
@@ -357,13 +385,12 @@
 
       canvas.addEventListener("click", (e) => {
         const rect = canvas.getBoundingClientRect();
-        // Get coordinates relative to current canvas size
         const x = Math.round(e.clientX - rect.left);
         const y = Math.round(e.clientY - rect.top);
 
-        // Convert to original image coordinates
-        const originalX = Math.round(x / scaleX);
-        const originalY = Math.round(y / scaleY);
+        // Convert to fixed image coordinates
+        const originalX = Math.round((x / rect.width) * FIXED_WIDTH);
+        const originalY = Math.round((y / rect.height) * FIXED_HEIGHT);
 
         const radius = parseInt(circleRadiusSlider.value);
         const section = currentSection.value;
@@ -711,13 +738,13 @@
       // Rename existing function and update its call
       function generateQuestionCoordinates() {
         const section = document.getElementById("questionSection").value;
-        let startQuestion, endQuestion, baseX;
-        const startY = 258;
-        const yIncrement = 13;
+        let startQuestion, endQuestion;
+        const yStart = 684; // New starting y-coordinate
+        const yIncrement = 36; // New y increment (approximately 720-684)
 
         // Define x-coordinates for each section
         const sectionCoords = {
-          "1-13": [53, 63, 74, 85, 95, 105],
+          "1-13": [85, 112, 142, 169, 199, 229], // New x-coordinates for section 1-13
           "14-29": [144, 154, 165, 176, 186, 196],
           "30-49": [234, 244, 255, 266, 276, 286],
           "50-70": [324, 334, 345, 356, 366, 376],
@@ -750,12 +777,12 @@
           questions: {},
         };
 
-        // Generate for selected question range
+        // Generate for selected question range with new radius
         for (let q = startQuestion; q <= endQuestion; q++) {
           completeCoords.questions[`question_${q}`] = baseX.map((x, i) => ({
             x: x,
-            y: startY + yIncrement * (q - startQuestion),
-            r: 3,
+            y: yStart + yIncrement * (q - startQuestion),
+            r: 11, // New larger radius
           }));
         }
 
@@ -772,35 +799,40 @@
         redrawCanvas();
       }
 
-      // Handle window resize
+      // Update the circle radius slider default
+      circleRadiusSlider.value = 11;
+      radiusValue.textContent = "11";
+
+      // Update window resize handler
       window.addEventListener("resize", () => {
         if (image.src) {
           const maxHeight = window.innerHeight * 0.85;
           const maxWidth = window.innerWidth * 0.7;
 
-          let newWidth = originalWidth;
-          let newHeight = originalHeight;
+          // Calculate scale to fit either width or height
+          const scaleWidth = maxWidth / FIXED_WIDTH;
+          const scaleHeight = maxHeight / FIXED_HEIGHT;
+          const scale = Math.min(scaleWidth, scaleHeight);
 
-          const aspectRatio = originalWidth / originalHeight;
+          const displayWidth = Math.round(FIXED_WIDTH * scale);
+          const displayHeight = Math.round(FIXED_HEIGHT * scale);
 
-          if (newHeight > maxHeight) {
-            newHeight = maxHeight;
-            newWidth = newHeight * aspectRatio;
-          }
-
-          if (newWidth > maxWidth) {
-            newWidth = maxWidth;
-            newHeight = newWidth / aspectRatio;
-          }
-
-          canvas.style.width = newWidth + "px";
-          canvas.style.height = newHeight + "px";
+          // Update canvas size
+          canvas.style.width = `${displayWidth}px`;
+          canvas.style.height = `${displayHeight}px`;
 
           fixCanvasDPI();
 
-          scaleX = canvas.width / originalWidth;
-          scaleY = canvas.height / originalHeight;
+          // Update scale factors
+          scaleX = canvas.width / FIXED_WIDTH;
+          scaleY = canvas.height / FIXED_HEIGHT;
 
+          // Update image dimensions display
+          document.getElementById(
+            "imageDimensions"
+          ).textContent = `${FIXED_WIDTH} x ${FIXED_HEIGHT} pixels (Display: ${displayWidth} x ${displayHeight})`;
+
+          // Redraw everything
           redrawCanvas();
         }
       });

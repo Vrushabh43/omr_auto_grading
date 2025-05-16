@@ -10,7 +10,7 @@ FILL_THRESHOLD = 0.85  # Very high threshold for complete circle filling
 CONFIDENCE_THRESHOLD = 0.9  # High confidence required
 MIN_FILLED_AREA = 0.8  # Minimum area that must be filled
 DEBUG_MODE = True  # Set to True to save debug images
-DIGIT_HEIGHT_GAP = 20  # Pixel gap between digits stacked vertically
+DIGIT_HEIGHT_GAP = 10  # Pixel gap between digits stacked vertically
 
 # Create debug directory if needed
 if DEBUG_MODE:
@@ -83,46 +83,66 @@ with open(JSON_PATH, "r") as f:
 
 results = {
     "student_id": "",
-    "exam_date": "",
+    "paper_code": "",
     "answers": {},
     "confidence_scores": {}
 }
 
 # === Detect student ID digits ===
-for bubble in data.get("student_id", []):
+if "student_id" in data:
+    student_id = ""
     max_confidence = 0
-    selected_digit = "X"
     
-    for digit in range(10):
-        x = bubble["x"]
-        y = bubble["y"] + digit * DIGIT_HEIGHT_GAP
-        r = bubble["r"]
-        is_filled_bubble, confidence = is_filled(thresh, x, y, r)
-        
-        if is_filled_bubble and confidence > max_confidence:
-            max_confidence = confidence
-            selected_digit = str(digit)
+    # Iterate through each letter position (letter_1 to letter_10)
+    for i in range(1, 11):
+        letter_key = f"letter_{i}"
+        if letter_key in data["student_id"]:
+            bubbles = data["student_id"][letter_key]
+            max_confidence_digit = 0
+            selected_digit = "X"
+            
+            # For each bubble in this letter position
+            for bubble in bubbles:
+                x, y, r = bubble["x"], bubble["y"], bubble["r"]
+                is_filled_bubble, confidence = is_filled(thresh, x, y, r)
+                
+                if is_filled_bubble and confidence > max_confidence_digit:
+                    max_confidence_digit = confidence
+                    selected_digit = str(len(student_id))  # Use position as digit
+            
+            student_id += selected_digit
+            max_confidence = max(max_confidence, max_confidence_digit)
     
-    results["student_id"] += selected_digit
+    results["student_id"] = student_id
     results["confidence_scores"]["student_id"] = max_confidence
 
-# === Detect exam date digits ===
-for bubble in data.get("exam_date", []):
+# === Detect paper code ===
+if "paper_code" in data:
+    paper_code = ""
     max_confidence = 0
-    selected_digit = "X"
     
-    for digit in range(10):
-        x = bubble["x"]
-        y = bubble["y"] + digit * DIGIT_HEIGHT_GAP
-        r = bubble["r"]
-        is_filled_bubble, confidence = is_filled(thresh, x, y, r)
-        
-        if is_filled_bubble and confidence > max_confidence:
-            max_confidence = confidence
-            selected_digit = str(digit)
+    # Iterate through each letter position (letter_1 to letter_10)
+    for i in range(1, 11):
+        letter_key = f"letter_{i}"
+        if letter_key in data["paper_code"]:
+            bubbles = data["paper_code"][letter_key]
+            max_confidence_digit = 0
+            selected_digit = "X"
+            
+            # For each bubble in this letter position
+            for bubble in bubbles:
+                x, y, r = bubble["x"], bubble["y"], bubble["r"]
+                is_filled_bubble, confidence = is_filled(thresh, x, y, r)
+                
+                if is_filled_bubble and confidence > max_confidence_digit:
+                    max_confidence_digit = confidence
+                    selected_digit = str(len(paper_code))  # Use position as digit
+            
+            paper_code += selected_digit
+            max_confidence = max(max_confidence, max_confidence_digit)
     
-    results["exam_date"] += selected_digit
-    results["confidence_scores"]["exam_date"] = max_confidence
+    results["paper_code"] = paper_code
+    results["confidence_scores"]["paper_code"] = max_confidence
 
 # === Detect MCQ answers ===
 for q_key, q_bubbles in data.get("questions", {}).items():
