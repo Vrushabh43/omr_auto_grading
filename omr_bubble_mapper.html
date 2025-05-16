@@ -121,6 +121,7 @@
         <label for="currentSection">Current Section:</label>
         <select id="currentSection">
           <option value="student_id">Student ID</option>
+          <option value="paper_code">Paper Code</option>
           <option value="questions">Questions</option>
         </select>
         <div class="section-info" id="sectionInfo">
@@ -169,6 +170,24 @@
           <option value="30-49">Questions 30-49</option>
           <option value="50-70">Questions 50-70</option>
         </select>
+      </div>
+
+      <div style="margin-top: 15px">
+        <button
+          onclick="generateQuestionCoordinates()"
+          style="margin-right: 10px"
+        >
+          📝 Generate Questions
+        </button>
+        <button
+          onclick="generateIDCoordinates('student_id')"
+          style="margin-right: 10px"
+        >
+          🆔 Generate Student ID
+        </button>
+        <button onclick="generateIDCoordinates('paper_code')">
+          📄 Generate Paper Code
+        </button>
       </div>
     </div>
 
@@ -232,6 +251,12 @@
           digitInfo.textContent = `Current Option: ${currentOption + 1}/${
             optionsPerQuestion.value
           }`;
+        } else {
+          const sectionName =
+            section === "student_id" ? "Student ID" : "Paper Code";
+          sectionInfo.textContent = `Marking ${sectionName} bubbles (7 digits, 7 positions each)`;
+          digitInfo.textContent = `Current Digit: ${currentDigit} (${currentOption}/7 positions)`;
+          questionControls.style.display = "none";
         }
       }
 
@@ -305,7 +330,6 @@
         const x = Math.round(e.clientX - rect.left);
         const y = Math.round(e.clientY - rect.top);
         const radius = parseInt(circleRadiusSlider.value);
-        const mode = drawingModeSelector.value;
         const section = currentSection.value;
 
         const point = {
@@ -346,28 +370,41 @@
           } else {
             updateSectionInfo();
           }
-        } else if (section === "student_id") {
+        } else if (section === "student_id" || section === "paper_code") {
+          // Handle Student ID and Paper Code marking
           const letterKey = `letter_${currentDigit}`;
-          if (!coords.student_id[letterKey]) {
-            coords.student_id[letterKey] = [];
+          if (!coords[section]) {
+            coords[section] = {};
           }
-          coords.student_id[letterKey].push(point);
-          currentOption++;
+          if (!coords[section][letterKey]) {
+            coords[section][letterKey] = [];
+          }
 
-          // Move to next digit if all options (0-9) are marked
-          if (currentOption >= 10) {
+          // Check if we've marked 7 positions in the current row
+          if (coords[section][letterKey].length >= 7) {
+            // Move to next letter
             currentDigit++;
-            currentOption = 0;
-            if (currentDigit > 6) {
-              currentSection.value = "questions";
-              updateSectionInfo();
-              questionControls.style.display = "block";
-            } else {
-              updateSectionInfo();
+            if (currentDigit > 7) {
+              currentDigit = 1;
+              // Switch to paper code or questions when done
+              if (section === "student_id") {
+                currentSection.value = "paper_code";
+              } else {
+                currentSection.value = "questions";
+              }
             }
+            // Create new letter array if needed
+            const newLetterKey = `letter_${currentDigit}`;
+            if (!coords[section][newLetterKey]) {
+              coords[section][newLetterKey] = [];
+            }
+            coords[section][newLetterKey].push(point);
           } else {
-            updateSectionInfo();
+            // Add point to current letter
+            coords[section][letterKey].push(point);
           }
+
+          updateSectionInfo();
         }
 
         redrawCanvas();
@@ -381,17 +418,23 @@
         }
 
         // Draw all markers
-        Object.entries(coords.student_id).forEach(([letter, points]) => {
-          points.forEach((point) => {
-            drawMarker(point, "red");
-          });
+        ["student_id", "paper_code"].forEach((section) => {
+          if (coords[section]) {
+            Object.entries(coords[section]).forEach(([letter, points]) => {
+              points.forEach((point) => {
+                drawMarker(point, "red");
+              });
+            });
+          }
         });
 
-        Object.entries(coords.questions).forEach(([question, points]) => {
-          points.forEach((point) => {
-            drawMarker(point, "red");
+        if (coords.questions) {
+          Object.entries(coords.questions).forEach(([question, points]) => {
+            points.forEach((point) => {
+              drawMarker(point, "red");
+            });
           });
-        });
+        }
 
         // Draw hover preview
         if (mouseX && mouseY) {
@@ -540,6 +583,110 @@
 
         coordsDisplay.textContent = JSON.stringify(completeCoords, null, 2);
         coords = completeCoords;
+        redrawCanvas();
+      }
+
+      // Helper function to generate ID coordinates (Student ID or Paper Code)
+      function generateIDCoordinates(type) {
+        const baseX =
+          type === "student_id"
+            ? [38, 52, 68, 80, 96, 109, 122] // Student ID x-coordinates
+            : [283, 292, 308, 320, 336, 349, 362]; // Paper Code x-coordinates
+        const startY = 135; // Starting y-coordinate
+        const yIncrement = 11; // Vertical spacing between numbers
+
+        let idCoords = {};
+
+        // Generate coordinates for each column (letter)
+        for (let col = 1; col <= 7; col++) {
+          const letterKey = `letter_${col}`;
+          idCoords[letterKey] = [];
+
+          // Generate coordinates for numbers 0-9 in each column
+          for (let num = 0; num <= 9; num++) {
+            idCoords[letterKey].push({
+              x: baseX[col - 1],
+              y: startY + num * yIncrement,
+              r: 3,
+            });
+          }
+        }
+
+        // Update the coordinates while preserving other sections
+        let newCoords = {
+          student_id:
+            type === "student_id" ? idCoords : coords.student_id || {},
+          paper_code:
+            type === "paper_code" ? idCoords : coords.paper_code || {},
+          questions: coords.questions || {},
+        };
+
+        coords = newCoords;
+        coordsDisplay.textContent = JSON.stringify(coords, null, 2);
+        redrawCanvas();
+      }
+
+      // Rename existing function and update its call
+      function generateQuestionCoordinates() {
+        const section = document.getElementById("questionSection").value;
+        let startQuestion, endQuestion, baseX;
+        const startY = 258;
+        const yIncrement = 13;
+
+        // Define x-coordinates for each section
+        const sectionCoords = {
+          "1-13": [53, 63, 74, 85, 95, 105],
+          "14-29": [144, 154, 165, 176, 186, 196],
+          "30-49": [234, 244, 255, 266, 276, 286],
+          "50-70": [324, 334, 345, 356, 366, 376],
+        };
+
+        switch (section) {
+          case "1-13":
+            startQuestion = 1;
+            endQuestion = 13;
+            break;
+          case "14-29":
+            startQuestion = 14;
+            endQuestion = 29;
+            break;
+          case "30-49":
+            startQuestion = 30;
+            endQuestion = 49;
+            break;
+          case "50-70":
+            startQuestion = 50;
+            endQuestion = 70;
+            break;
+        }
+
+        baseX = sectionCoords[section];
+
+        let completeCoords = {
+          student_id: coords.student_id || {},
+          paper_code: coords.paper_code || {},
+          questions: {},
+        };
+
+        // Generate for selected question range
+        for (let q = startQuestion; q <= endQuestion; q++) {
+          completeCoords.questions[`question_${q}`] = baseX.map((x, i) => ({
+            x: x,
+            y: startY + yIncrement * (q - startQuestion),
+            r: 3,
+          }));
+        }
+
+        // Merge with existing coordinates
+        if (coords.questions) {
+          completeCoords.questions = {
+            ...coords.questions,
+            ...completeCoords.questions,
+          };
+        }
+
+        coords = completeCoords;
+        coordsDisplay.textContent = JSON.stringify(coords, null, 2);
         redrawCanvas();
       }
 
