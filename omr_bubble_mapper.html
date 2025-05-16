@@ -254,8 +254,8 @@
         } else {
           const sectionName =
             section === "student_id" ? "Student ID" : "Paper Code";
-          sectionInfo.textContent = `Marking ${sectionName} bubbles (7 digits, 7 positions each)`;
-          digitInfo.textContent = `Current Digit: ${currentDigit} (${currentOption}/7 positions)`;
+          sectionInfo.textContent = `Marking ${sectionName} bubbles (10 letters, 7 columns each)`;
+          digitInfo.textContent = `Current Letter: ${currentDigit} (${currentOption}/7 columns)`;
           questionControls.style.display = "none";
         }
       }
@@ -380,11 +380,11 @@
             coords[section][letterKey] = [];
           }
 
-          // Check if we've marked 7 positions in the current row
+          // Check if we've marked 7 positions in the current letter
           if (coords[section][letterKey].length >= 7) {
             // Move to next letter
             currentDigit++;
-            if (currentDigit > 7) {
+            if (currentDigit > 10) {
               currentDigit = 1;
               // Switch to paper code or questions when done
               if (section === "student_id") {
@@ -588,28 +588,55 @@
 
       // Helper function to generate ID coordinates (Student ID or Paper Code)
       function generateIDCoordinates(type) {
+        // X-coordinates for the 7 columns
         const baseX =
           type === "student_id"
-            ? [38, 52, 68, 80, 96, 109, 122] // Student ID x-coordinates
-            : [283, 292, 308, 320, 336, 349, 362]; // Paper Code x-coordinates
-        const startY = 135; // Starting y-coordinate
-        const yIncrement = 11; // Vertical spacing between numbers
+            ? [37, 52, 66, 80, 95, 110, 124] // Student ID x-coordinates
+            : [290, 305, 319, 334, 346, 360, 375]; // Paper Code x-coordinates (updated)
+
+        // Y-coordinates for the 10 letters (rows)
+        const yCoords =
+          type === "student_id"
+            ? [
+                134, // letter_1
+                144, // letter_2
+                154, // letter_3
+                164, // letter_4
+                174, // letter_5
+                184, // letter_6
+                194, // letter_7
+                204, // letter_8
+                214, // letter_9
+                224, // letter_10
+              ]
+            : [
+                134, // letter_1
+                145, // letter_2
+                155, // letter_3
+                165, // letter_4
+                175, // letter_5
+                185, // letter_6
+                195, // letter_7
+                205, // letter_8
+                215, // letter_9
+                225, // letter_10
+              ];
 
         let idCoords = {};
 
-        // Generate coordinates for each column (letter)
-        for (let col = 1; col <= 7; col++) {
-          const letterKey = `letter_${col}`;
+        // Generate coordinates for each letter (1-10)
+        for (let letter = 1; letter <= 10; letter++) {
+          const letterKey = `letter_${letter}`;
           idCoords[letterKey] = [];
 
-          // Generate coordinates for numbers 0-9 in each column
-          for (let num = 0; num <= 9; num++) {
+          // Generate all 7 column positions for this letter
+          baseX.forEach((x) => {
             idCoords[letterKey].push({
-              x: baseX[col - 1],
-              y: startY + num * yIncrement,
+              x: x,
+              y: yCoords[letter - 1],
               r: 3,
             });
-          }
+          });
         }
 
         // Update the coordinates while preserving other sections
