@@ -24,7 +24,8 @@ params.adaptiveThreshWinSizeMax = 23
 params.adaptiveThreshConstant = 7
 detector = aruco.ArucoDetector(aruco_dict, params)
 corners, ids, rejected = detector.detectMarkers(gray)
-
+print(ids)
+print(corners)
 if ids is not None:
     print(f"Found {len(ids)} markers with IDs: {[id[0] for id in ids]}")
     

@@ -218,14 +218,16 @@
       const sectionSelect = document.createElement("div");
       const questionSection = document.getElementById("questionSection");
       let image = new Image();
+      let originalWidth = 0; // Store original image width
+      let originalHeight = 0; // Store original height
+      let scaleX = 1; // Scale factor for x coordinates
+      let scaleY = 1; // Scale factor for y coordinates
       let coords = {
         student_id: {},
         questions: {},
       };
       let mouseX = 0;
       let mouseY = 0;
-      let scaleX = 1;
-      let scaleY = 1;
       let currentQuestion = 1;
       let currentDigit = 1;
       let currentOption = 0;
@@ -273,9 +275,9 @@
       // Track mouse position
       canvas.addEventListener("mousemove", (e) => {
         const rect = canvas.getBoundingClientRect();
-        mouseX = e.clientX - rect.left;
-        mouseY = e.clientY - rect.top;
-        redrawCanvas();
+        mouseX = Math.round(e.clientX - rect.left);
+        mouseY = Math.round(e.clientY - rect.top);
+        requestAnimationFrame(redrawCanvas); // Use requestAnimationFrame for smoother updates
       });
 
       canvas.addEventListener("mouseleave", () => {
@@ -284,12 +286,33 @@
         redrawCanvas();
       });
 
+      // Fix canvas DPI scaling
+      function fixCanvasDPI() {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+
+        // Set display size
+        canvas.style.width = rect.width + "px";
+        canvas.style.height = rect.height + "px";
+
+        // Set actual size in memory
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+
+        // Scale context to ensure correct drawing operations
+        ctx.scale(dpr, dpr);
+      }
+
       // Image upload handler
       upload.addEventListener("change", (e) => {
         const file = e.target.files[0];
         const reader = new FileReader();
         reader.onload = function (event) {
           image.onload = () => {
+            // Store original dimensions
+            originalWidth = image.width;
+            originalHeight = image.height;
+
             const maxHeight = window.innerHeight * 0.85;
             const maxWidth = window.innerWidth * 0.7;
 
@@ -309,16 +332,23 @@
               newHeight = newWidth / aspectRatio;
             }
 
-            // Set canvas size to match image dimensions
-            canvas.width = newWidth;
-            canvas.height = newHeight;
+            // Set canvas size
+            canvas.style.width = newWidth + "px";
+            canvas.style.height = newHeight + "px";
+
+            // Fix DPI scaling
+            fixCanvasDPI();
+
+            // Calculate scale factors
+            scaleX = canvas.width / originalWidth;
+            scaleY = canvas.height / originalHeight;
 
             // Enable image smoothing for better quality
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = "high";
 
             // Draw the image
-            ctx.drawImage(image, 0, 0, newWidth, newHeight);
+            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
           };
           image.src = event.target.result;
         };
@@ -327,14 +357,20 @@
 
       canvas.addEventListener("click", (e) => {
         const rect = canvas.getBoundingClientRect();
+        // Get coordinates relative to current canvas size
         const x = Math.round(e.clientX - rect.left);
         const y = Math.round(e.clientY - rect.top);
+
+        // Convert to original image coordinates
+        const originalX = Math.round(x / scaleX);
+        const originalY = Math.round(y / scaleY);
+
         const radius = parseInt(circleRadiusSlider.value);
         const section = currentSection.value;
 
         const point = {
-          x: x,
-          y: y,
+          x: originalX, // Store original coordinates
+          y: originalY,
           r: radius,
         };
 
@@ -411,8 +447,27 @@
         updateCoordsDisplay();
       });
 
+      function drawMarker(point, color) {
+        ctx.save();
+        ctx.beginPath();
+
+        // Ensure perfect circles by using equal scaling
+        const scale = Math.min(scaleX, scaleY);
+        const scaledX = point.x * scale;
+        const scaledY = point.y * scale;
+        const scaledR = point.r * scale;
+
+        ctx.arc(scaledX, scaledY, scaledR, 0, Math.PI * 2);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+      }
+
       function redrawCanvas() {
+        const dpr = window.devicePixelRatio || 1;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
         if (image.src) {
           ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
         }
@@ -439,19 +494,14 @@
         // Draw hover preview
         if (mouseX && mouseY) {
           const radius = parseInt(circleRadiusSlider.value);
+          // Convert mouse coordinates back to original scale
+          const originalX = mouseX / scaleX;
+          const originalY = mouseY / scaleY;
           drawMarker(
-            { x: mouseX, y: mouseY, r: radius },
+            { x: originalX, y: originalY, r: radius },
             "rgba(255, 0, 0, 0.5)"
           );
         }
-      }
-
-      function drawMarker(point, color) {
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, point.r, 0, Math.PI * 2);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.stroke();
       }
 
       function downloadJSON() {
@@ -484,6 +534,11 @@
           const newCoords = JSON.parse(coordsDisplay.textContent);
           if (isValidCoordsStructure(newCoords)) {
             coords = newCoords;
+            // Recalculate scale factors if image is loaded
+            if (image.src) {
+              scaleX = canvas.width / originalWidth;
+              scaleY = canvas.height / originalHeight;
+            }
             redrawCanvas();
           }
         } catch (e) {
@@ -716,6 +771,39 @@
         coordsDisplay.textContent = JSON.stringify(coords, null, 2);
         redrawCanvas();
       }
+
+      // Handle window resize
+      window.addEventListener("resize", () => {
+        if (image.src) {
+          const maxHeight = window.innerHeight * 0.85;
+          const maxWidth = window.innerWidth * 0.7;
+
+          let newWidth = originalWidth;
+          let newHeight = originalHeight;
+
+          const aspectRatio = originalWidth / originalHeight;
+
+          if (newHeight > maxHeight) {
+            newHeight = maxHeight;
+            newWidth = newHeight * aspectRatio;
+          }
+
+          if (newWidth > maxWidth) {
+            newWidth = maxWidth;
+            newHeight = newWidth / aspectRatio;
+          }
+
+          canvas.style.width = newWidth + "px";
+          canvas.style.height = newHeight + "px";
+
+          fixCanvasDPI();
+
+          scaleX = canvas.width / originalWidth;
+          scaleY = canvas.height / originalHeight;
+
+          redrawCanvas();
+        }
+      });
 
       // Initialize section info
       updateSectionInfo();
