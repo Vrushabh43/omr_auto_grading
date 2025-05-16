@@ -160,6 +160,16 @@
       <button onclick="generateCompleteCoordinates()">
         📝 Generate 13Q Template
       </button>
+
+      <div style="margin-top: 15px">
+        <label for="questionSection">Question Section:</label>
+        <select id="questionSection">
+          <option value="1-13">Questions 1-13</option>
+          <option value="14-29">Questions 14-29</option>
+          <option value="30-49">Questions 30-49</option>
+          <option value="50-70">Questions 50-70</option>
+        </select>
+      </div>
     </div>
 
     <div class="main-content">
@@ -186,6 +196,8 @@
       const digitInfo = document.getElementById("digitInfo");
       const optionsPerQuestion = document.getElementById("optionsPerQuestion");
       const questionControls = document.getElementById("questionControls");
+      const sectionSelect = document.createElement("div");
+      const questionSection = document.getElementById("questionSection");
       let image = new Image();
       let coords = {
         student_id: {},
@@ -303,13 +315,30 @@
         };
 
         if (section === "questions") {
+          const questionSection =
+            document.getElementById("questionSection").value;
+          let startQuestion;
+          switch (questionSection) {
+            case "1-13":
+              startQuestion = 1;
+              break;
+            case "14-29":
+              startQuestion = 14;
+              break;
+            case "30-49":
+              startQuestion = 30;
+              break;
+            case "50-70":
+              startQuestion = 50;
+              break;
+          }
+
           if (!coords.questions[`question_${currentQuestion}`]) {
             coords.questions[`question_${currentQuestion}`] = [];
           }
           coords.questions[`question_${currentQuestion}`].push(point);
           currentOption++;
 
-          // Move to next question if all options are marked
           if (currentOption >= parseInt(optionsPerQuestion.value)) {
             currentQuestion++;
             currentOption = 0;
@@ -453,22 +482,60 @@
 
       // Helper function to generate complete coordinates
       function generateCompleteCoordinates() {
-        const baseX = [53, 63, 74, 85, 95, 105];
+        const section = document.getElementById("questionSection").value;
+        let startQuestion, endQuestion, baseX;
         const startY = 258;
         const yIncrement = 13;
+
+        // Define x-coordinates for each section
+        const sectionCoords = {
+          "1-13": [53, 63, 74, 85, 95, 105],
+          "14-29": [144, 154, 165, 176, 186, 196],
+          "30-49": [235, 245, 256, 267, 277, 287],
+          "50-70": [326, 336, 347, 358, 368, 378],
+        };
+
+        switch (section) {
+          case "1-13":
+            startQuestion = 1;
+            endQuestion = 13;
+            break;
+          case "14-29":
+            startQuestion = 14;
+            endQuestion = 29;
+            break;
+          case "30-49":
+            startQuestion = 30;
+            endQuestion = 49;
+            break;
+          case "50-70":
+            startQuestion = 50;
+            endQuestion = 70;
+            break;
+        }
+
+        baseX = sectionCoords[section];
 
         let completeCoords = {
           student_id: {},
           questions: {},
         };
 
-        // Generate for 13 questions
-        for (let q = 1; q <= 13; q++) {
+        // Generate for selected question range
+        for (let q = startQuestion; q <= endQuestion; q++) {
           completeCoords.questions[`question_${q}`] = baseX.map((x, i) => ({
             x: x,
-            y: startY + yIncrement * (q - 1),
+            y: startY + yIncrement * (q - startQuestion),
             r: 3,
           }));
+        }
+
+        // Merge with existing coordinates if any
+        if (coords.questions) {
+          completeCoords.questions = {
+            ...coords.questions,
+            ...completeCoords.questions,
+          };
         }
 
         coordsDisplay.textContent = JSON.stringify(completeCoords, null, 2);
