@@ -156,6 +156,10 @@
         <button onclick="downloadJSON()">📥 Download Coordinates</button>
         <button onclick="resetCanvas()">🗑️ Reset All</button>
       </div>
+
+      <button onclick="generateCompleteCoordinates()">
+        📝 Generate 13Q Template
+      </button>
     </div>
 
     <div class="main-content">
@@ -347,45 +351,35 @@
           ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
         }
 
-        // Draw student ID markers
+        // Draw all markers
         Object.entries(coords.student_id).forEach(([letter, points]) => {
           points.forEach((point) => {
-            ctx.beginPath();
-            ctx.arc(point.x, point.y, point.r, 0, Math.PI * 2);
-            ctx.strokeStyle = "red";
-            ctx.lineWidth = 2;
-            ctx.stroke();
+            drawMarker(point, "red");
           });
         });
 
-        // Draw question markers
         Object.entries(coords.questions).forEach(([question, points]) => {
           points.forEach((point) => {
-            ctx.beginPath();
-            ctx.arc(point.x, point.y, point.r, 0, Math.PI * 2);
-            ctx.strokeStyle = "red";
-            ctx.lineWidth = 2;
-            ctx.stroke();
+            drawMarker(point, "red");
           });
         });
 
         // Draw hover preview
         if (mouseX && mouseY) {
-          const mode = drawingModeSelector.value;
           const radius = parseInt(circleRadiusSlider.value);
-
-          ctx.beginPath();
-          if (mode === "point") {
-            ctx.arc(mouseX, mouseY, 3, 0, Math.PI * 2);
-            ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
-            ctx.fill();
-          } else {
-            ctx.arc(mouseX, mouseY, radius, 0, Math.PI * 2);
-            ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
-            ctx.lineWidth = 2;
-            ctx.stroke();
-          }
+          drawMarker(
+            { x: mouseX, y: mouseY, r: radius },
+            "rgba(255, 0, 0, 0.5)"
+          );
         }
+      }
+
+      function drawMarker(point, color) {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, point.r, 0, Math.PI * 2);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
       }
 
       function downloadJSON() {
@@ -455,6 +449,31 @@
       // Update coordinates display
       function updateCoordsDisplay() {
         coordsDisplay.textContent = JSON.stringify(coords, null, 2);
+      }
+
+      // Helper function to generate complete coordinates
+      function generateCompleteCoordinates() {
+        const baseX = [53, 63, 74, 85, 95, 105];
+        const startY = 258;
+        const yIncrement = 13;
+
+        let completeCoords = {
+          student_id: {},
+          questions: {},
+        };
+
+        // Generate for 13 questions
+        for (let q = 1; q <= 13; q++) {
+          completeCoords.questions[`question_${q}`] = baseX.map((x, i) => ({
+            x: x,
+            y: startY + yIncrement * (q - 1),
+            r: 3,
+          }));
+        }
+
+        coordsDisplay.textContent = JSON.stringify(completeCoords, null, 2);
+        coords = completeCoords;
+        redrawCanvas();
       }
 
       // Initialize section info
