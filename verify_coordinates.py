@@ -3,8 +3,17 @@ import json
 import numpy as np
 import os
 
+os.makedirs('output', exist_ok=True)
+os.makedirs('output/verify_coordinates', exist_ok=True)
+# Remove all files from output/verify_coordinates directory
+if os.path.exists('output/verify_coordinates'):
+    for file in os.listdir('output/verify_coordinates'):
+        file_path = os.path.join('output/verify_coordinates', file)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
 # === Config ===
-IMAGE_PATH = "output/detect_omr/warped_omr.jpg"
+IMAGE_PATH = "output/detect_omr/warped_omr_resized.jpg"
 JSON_PATH = "assets/omr_coordinates.json"
 OUTPUT_PATH = "output/verify_coordinates/omr_marked_preview.jpg"
 

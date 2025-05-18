@@ -1,5 +1,8 @@
 # OMR (Optical Mark Recognition) Grading System
 
+> **General Instruction:**
+> This repository provides a complete pipeline for automated OMR grading using Python. To get started, follow the installation steps, then use the provided scripts in the order described below. Each script has a specific role in the workflow. See the "Python Scripts Overview" section for details.
+
 This project implements an automated OMR (Optical Mark Recognition) system for grading answer sheets using ArUco markers for precise detection and alignment.
 
 ## Features
@@ -60,26 +63,36 @@ The script will:
 - Apply perspective transformation
 - Save the processed image in the `output` directory
 
-### 3. Using the Bubble Mapping Tool
+### 3. Generate Bubble Coordinates (Choose One Method)
 
-The project includes an interactive web-based tool (`omr_bubble_mapper.html`) for mapping bubble locations on your answer sheet:
+You need a JSON file with bubble coordinates for grading. You can generate this in one of two ways:
 
-1. Open `omr_bubble_mapper.html` in your web browser
-2. Upload your processed answer sheet image
-3. Use the tool to mark bubble locations:
-   - Select the section type (Student ID or Questions)
-   - Choose between point or circle drawing mode
-   - Adjust circle size if needed
-   - Click on each bubble location to mark it
-4. Download the coordinates as JSON for use in your grading system
+**A. Using the Python script:**
+```bash
+python generate_omr_coordinates.py
+```
+This will create `assets/omr_coordinates.json` with default coordinates for Student ID, Paper Code, and Questions.
 
-Features of the Bubble Mapper:
-- Support for Student ID and Questions sections
-- Configurable number of options per question
-- Real-time coordinate display
-- Circle or point marking modes
-- Adjustable circle size
-- JSON export of coordinates
+**B. Using the interactive HTML tool:**
+1. Open `omr_bubble_mapper.html` in your web browser.
+2. Upload your processed answer sheet image.
+3. Mark bubble locations as needed and export the coordinates as JSON.
+4. Save the exported JSON as `assets/omr_coordinates.json`.
+
+### 4. (Optional) Verify Bubble Coordinates
+
+To visually verify that your coordinates align with the answer sheet:
+```bash
+python verify_coordinates.py
+```
+This will overlay the coordinates on the processed sheet and save a preview image in `output/verify_coordinates/omr_marked_preview.jpg`.
+
+### 5. Grade the Answer Sheet
+
+Run the grading script to detect filled bubbles and output results:
+```bash
+python omr_grader.py
+```
 
 ### Output Files
 
@@ -88,6 +101,25 @@ The script generates several output files in the `output` directory:
 - `warped_omr.jpg`: The corrected and aligned answer sheet
 - `warped_omr_resized.jpg`: A resized version if the original is too large
 - `partial_detection.jpg`: Debug image when not all markers are detected
+
+## Python Scripts Overview
+
+Below is a summary of each Python script in this repository and how to run them:
+
+- **aruco_gen.py**: Generates four ArUco marker images (marker_1.png to marker_4.png) for use on the answer sheet corners.
+  - **Run:** `python aruco_gen.py`
+
+- **detect_omr.py**: Detects ArUco markers in a scanned answer sheet, applies perspective correction, and outputs aligned images.
+  - **Run:** `python detect_omr.py`
+
+- **generate_omr_coordinates.py**: Generates a JSON file (`omr_coordinates.json`) with the coordinates of all bubbles (Student ID, Paper Code, Questions) for grading.
+  - **Run:** `python generate_omr_coordinates.py`
+
+- **verify_coordinates.py**: Overlays and visualizes the bubble coordinates on the processed answer sheet for verification.
+  - **Run:** `python verify_coordinates.py`
+
+- **omr_grader.py**: Grades the answer sheet by detecting filled bubbles using the processed image and coordinates JSON, and outputs results.
+  - **Run:** `python omr_grader.py`
 
 ## Marker Placement
 

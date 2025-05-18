@@ -6,9 +6,16 @@ import os
 
 # Create output directory if it doesn't exist
 os.makedirs('output', exist_ok=True)
+os.makedirs('output/detect_omr', exist_ok=True)
+# Remove all files from output/detect_omr directory
+if os.path.exists('output/detect_omr'):
+    for file in os.listdir('output/detect_omr'):
+        file_path = os.path.join('output/detect_omr', file)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
 
 # Read image
-image = cv2.imread("assets/scanned_omr.png")
+image = cv2.imread("assets/scanned_omr_9.png")
 if image is None:
     print("Error: Could not read the image file")
     exit(1)
@@ -82,29 +89,22 @@ if ids is not None:
             pad_x = int(w * 0.01)
             pad_y = int(h * 0.01)
             
-            # Add minimal padding to the warping points to avoid cutting edges
-            ordered_pts[0] = ordered_pts[0] - [pad_x, pad_y]  # Top-left
-            ordered_pts[1] = ordered_pts[1] + [pad_x, -pad_y]  # Top-right
-            ordered_pts[2] = ordered_pts[2] + [pad_x, pad_y]   # Bottom-right
-            ordered_pts[3] = ordered_pts[3] + [-pad_x, pad_y]  # Bottom-left
-            
+            # Remove padding: use marker corners directly for warping
+            # ordered_pts[0] = ordered_pts[0] - [pad_x, pad_y]  # Top-left
+            # ordered_pts[1] = ordered_pts[1] + [pad_x, -pad_y]  # Top-right
+            # ordered_pts[2] = ordered_pts[2] + [pad_x, pad_y]   # Bottom-right
+            # ordered_pts[3] = ordered_pts[3] + [-pad_x, pad_y]  # Bottom-left
             # Warp the image
             warped = four_point_transform(image, ordered_pts)
             
-            # Save both original size and a resized version
+            # Save both original size and a fixed-size version
             cv2.imwrite("output/detect_omr/warped_omr.jpg", warped)
-            
-            # Save a resized version if the warped image is too large
-            max_dimension = 1500
-            h, w = warped.shape[:2]
-            if max(h, w) > max_dimension:
-                scale = max_dimension / max(h, w)
-                new_size = (int(w * scale), int(h * scale))
-                warped_resized = cv2.resize(warped, new_size, interpolation=cv2.INTER_AREA)
-                cv2.imwrite("output/detect_omr/warped_omr_resized.jpg", warped_resized)
-                print("Saved both original and resized warped images!")
-            else:
-                print("Successfully warped and saved the image!")
+
+            # Always resize to fixed size (1030x1500)
+            fixed_size = (1030, 1500)  # width x height
+            warped_resized = cv2.resize(warped, fixed_size, interpolation=cv2.INTER_AREA)
+            cv2.imwrite("output/detect_omr/warped_omr_resized.jpg", warped_resized)
+            print("Saved both original and fixed-size warped images!")
             
         except KeyError as e:
             print(f"Error: Missing marker with ID {e}. Make sure all required markers (1,2,3,4) are visible.")

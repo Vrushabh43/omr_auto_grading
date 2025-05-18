@@ -1,844 +1,832 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>OMR Bubble Mapper</title>
-    <style>
-      body {
-        font-family: sans-serif;
-        padding: 20px;
-        max-width: 1600px;
-        margin: 0 auto;
-      }
-      canvas {
-        border: 2px solid #222;
-        cursor: none;
-        max-height: 85vh;
-        max-width: 95vw;
-        background: #fff;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        image-rendering: -webkit-optimize-contrast;
-        image-rendering: crisp-edges;
-        image-rendering: pixelated;
-        width: auto;
-        height: auto;
-      }
-      .canvas-container {
-        width: fit-content;
-        position: relative;
-        margin: 0 auto;
-        overflow: visible;
-      }
-      .canvas-info {
-        position: absolute;
-        top: -25px;
-        left: 0;
-        font-size: 12px;
-        color: #666;
-      }
-      #coords {
-        white-space: pre;
-        background: #f5f5f5;
-        padding: 15px;
-        border-radius: 5px;
-        height: 80vh;
-        overflow-y: auto;
-        font-family: monospace;
-        font-size: 14px;
-      }
-      button {
-        margin-top: 10px;
-        margin-right: 10px;
-        padding: 8px 16px;
-        cursor: pointer;
-      }
-      .control-panel {
-        margin: 10px 0;
-        padding: 15px;
-        background: #f8f8f8;
-        border-radius: 5px;
-      }
-      .control-panel label {
-        margin-right: 15px;
-        font-weight: bold;
-      }
-      #circleRadius {
-        width: 200px;
-        vertical-align: middle;
-      }
-      #drawingMode {
-        padding: 5px;
-        margin-right: 20px;
-      }
-      .main-content {
-        display: flex;
-        gap: 20px;
-        margin-top: 20px;
-      }
-      .left-panel {
-        flex: 1;
-        min-width: 0;
-      }
-      .right-panel {
-        width: 300px;
-        flex-shrink: 0;
-      }
-      .coords-title {
-        margin-top: 0;
-        padding-bottom: 10px;
-        border-bottom: 2px solid #eee;
-      }
-      .section-controls {
-        margin-top: 15px;
-        padding: 10px;
-        background: #f0f0f0;
-        border-radius: 5px;
-      }
-      .section-controls select {
-        padding: 5px;
-        margin-right: 10px;
-      }
-      .section-info {
-        margin-top: 5px;
-        font-size: 14px;
-        color: #666;
-      }
-      .digit-info {
-        margin-top: 5px;
-        font-weight: bold;
-        color: #333;
-      }
-      #coords {
-        outline: none;
-        border: 1px solid #ccc;
-        padding: 15px;
-        border-radius: 5px;
-        background: #f5f5f5;
-        font-family: monospace;
-        font-size: 14px;
-        line-height: 1.5;
-        white-space: pre;
-        overflow-y: auto;
-        height: 80vh;
-      }
-      #coords:focus {
-        border-color: #666;
-        background: #fff;
-      }
-    </style>
-  </head>
-  <body>
-    <h2>🎯 OMR Bubble Mapper Tool</h2>
 
-    <div class="control-panel">
-      <input type="file" id="upload" accept="image/*" />
-      <div class="image-info" style="margin-top: 5px; color: #666">
-        Recommended image size: 1029 x 1500 pixels
+<head>
+  <meta charset="UTF-8" />
+  <title>OMR Bubble Mapper</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    canvas {
+      border: 2px solid #222;
+      cursor: none;
+      max-height: 85vh;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+      image-rendering: pixelated;
+    }
+
+    #coords {
+      white-space: pre;
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 5px;
+      height: 80vh;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    button {
+      margin-top: 10px;
+      margin-right: 10px;
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+
+    .control-panel {
+      margin: 10px 0;
+      padding: 15px;
+      background: #f8f8f8;
+      border-radius: 5px;
+    }
+
+    .control-panel label {
+      margin-right: 15px;
+      font-weight: bold;
+    }
+
+    #circleRadius {
+      width: 200px;
+      vertical-align: middle;
+    }
+
+    #drawingMode {
+      padding: 5px;
+      margin-right: 20px;
+    }
+
+    .main-content {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .left-panel {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .right-panel {
+      width: 300px;
+      flex-shrink: 0;
+    }
+
+    .coords-title {
+      margin-top: 0;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #eee;
+    }
+
+    .section-controls {
+      margin-top: 15px;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 5px;
+    }
+
+    .section-controls select {
+      padding: 5px;
+      margin-right: 10px;
+    }
+
+    .section-info {
+      margin-top: 5px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .digit-info {
+      margin-top: 5px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    #coords {
+      outline: none;
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 5px;
+      background: #f5f5f5;
+      font-family: monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      white-space: pre;
+      overflow-y: auto;
+      height: 80vh;
+    }
+
+    #coords:focus {
+      border-color: #666;
+      background: #fff;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>🎯 OMR Bubble Mapper Tool</h2>
+
+  <div class="control-panel">
+    <input type="file" id="upload" accept="image/*" />
+
+    <div class="section-controls">
+      <label for="currentSection">Current Section:</label>
+      <select id="currentSection">
+        <option value="student_id">Student ID</option>
+        <option value="paper_code">Paper Code</option>
+        <option value="questions">Questions</option>
+      </select>
+      <div class="section-info" id="sectionInfo">
+        Marking Student ID bubbles (6 digits, 0-9 each)
       </div>
+      <div class="digit-info" id="digitInfo">Current Digit: 1 (0-9)</div>
+    </div>
 
-      <div class="section-controls">
-        <label for="currentSection">Current Section:</label>
-        <select id="currentSection">
-          <option value="student_id">Student ID</option>
-          <option value="paper_code">Paper Code</option>
-          <option value="questions">Questions</option>
-        </select>
-        <div class="section-info" id="sectionInfo">
-          Marking Student ID bubbles (6 digits, 0-9 each)
-        </div>
-        <div class="digit-info" id="digitInfo">Current Digit: 1 (0-9)</div>
-      </div>
+    <div style="margin-top: 15px">
+      <label for="drawingMode">Drawing Mode:</label>
+      <select id="drawingMode">
+        <option value="point">Point</option>
+        <option value="circle" selected>Circle</option>
+      </select>
 
-      <div style="margin-top: 15px">
-        <label for="drawingMode">Drawing Mode:</label>
-        <select id="drawingMode">
-          <option value="point">Point</option>
-          <option value="circle" selected>Circle</option>
-        </select>
+      <label for="circleRadius">Circle Size:</label>
+      <input type="range" id="circleRadius" min="1" max="50" value="5" />
+      <span id="radiusValue">5</span>px
+    </div>
 
-        <label for="circleRadius">Circle Size:</label>
-        <input type="range" id="circleRadius" min="1" max="50" value="11" />
-        <span id="radiusValue">11</span>px
-      </div>
+    <div style="margin-top: 15px" id="questionControls">
+      <label for="optionsPerQuestion">Options per Question:</label>
+      <select id="optionsPerQuestion">
+        <option value="2">2 Options</option>
+        <option value="3">3 Options</option>
+        <option value="4">4 Options</option>
+        <option value="5">5 Options</option>
+        <option value="6" selected>6 Options</option>
+      </select>
+    </div>
 
-      <div style="margin-top: 15px" id="questionControls">
-        <label for="optionsPerQuestion">Options per Question:</label>
-        <select id="optionsPerQuestion">
-          <option value="2">2 Options</option>
-          <option value="3">3 Options</option>
-          <option value="4">4 Options</option>
-          <option value="5">5 Options</option>
-          <option value="6" selected>6 Options</option>
-        </select>
-      </div>
+    <div style="margin-top: 10px">
+      <button onclick="downloadJSON()">📥 Download Coordinates</button>
+      <button onclick="resetCanvas()">🗑️ Reset All</button>
+    </div>
 
-      <div style="margin-top: 10px">
-        <button onclick="downloadJSON()">📥 Download Coordinates</button>
-        <button onclick="resetCanvas()">🗑️ Reset All</button>
-      </div>
+    <button onclick="generateCompleteCoordinates()">
+      📝 Generate 13Q Template
+    </button>
 
-      <button onclick="generateCompleteCoordinates()">
-        📝 Generate 13Q Template
+    <div style="margin-top: 15px">
+      <label for="questionSection">Question Section:</label>
+      <select id="questionSection">
+        <option value="1-13">Questions 1-13</option>
+        <option value="14-29">Questions 14-29</option>
+        <option value="30-49">Questions 30-49</option>
+        <option value="50-70">Questions 50-70</option>
+      </select>
+    </div>
+
+    <div style="margin-top: 15px">
+      <button onclick="generateQuestionCoordinates()" style="margin-right: 10px">
+        📝 Generate Questions
       </button>
+      <button onclick="generateIDCoordinates('student_id')" style="margin-right: 10px">
+        🆔 Generate Student ID
+      </button>
+      <button onclick="generateIDCoordinates('paper_code')">
+        📄 Generate Paper Code
+      </button>
+    </div>
+  </div>
 
-      <div style="margin-top: 15px">
-        <label for="questionSection">Question Section:</label>
-        <select id="questionSection">
-          <option value="1-13">Questions 1-13</option>
-          <option value="14-29">Questions 14-29</option>
-          <option value="30-49">Questions 30-49</option>
-          <option value="50-70">Questions 50-70</option>
-        </select>
-      </div>
-
-      <div style="margin-top: 15px">
-        <button
-          onclick="generateQuestionCoordinates()"
-          style="margin-right: 10px"
-        >
-          📝 Generate Questions
-        </button>
-        <button
-          onclick="generateIDCoordinates('student_id')"
-          style="margin-right: 10px"
-        >
-          🆔 Generate Student ID
-        </button>
-        <button onclick="generateIDCoordinates('paper_code')">
-          📄 Generate Paper Code
-        </button>
-      </div>
+  <div class="main-content">
+    <div class="left-panel">
+      <canvas id="canvas"></canvas>
     </div>
 
-    <div class="main-content">
-      <div class="left-panel">
-        <div class="canvas-container">
-          <div class="canvas-info">
-            Image size: <span id="imageDimensions">No image loaded</span>
-          </div>
-          <canvas id="canvas"></canvas>
-        </div>
-      </div>
-
-      <div class="right-panel">
-        <h3 class="coords-title">🧭 Clicked Coordinates</h3>
-        <div id="coords" contenteditable="true" spellcheck="false">[]</div>
-      </div>
+    <div class="right-panel">
+      <h3 class="coords-title">🧭 Clicked Coordinates</h3>
+      <div id="coords" contenteditable="true" spellcheck="false">[]</div>
     </div>
+  </div>
 
-    <script>
-      const upload = document.getElementById("upload");
-      const canvas = document.getElementById("canvas");
-      const ctx = canvas.getContext("2d");
-      const coordsDisplay = document.getElementById("coords");
-      const drawingModeSelector = document.getElementById("drawingMode");
-      const circleRadiusSlider = document.getElementById("circleRadius");
-      const radiusValue = document.getElementById("radiusValue");
-      const currentSection = document.getElementById("currentSection");
-      const sectionInfo = document.getElementById("sectionInfo");
-      const digitInfo = document.getElementById("digitInfo");
-      const optionsPerQuestion = document.getElementById("optionsPerQuestion");
-      const questionControls = document.getElementById("questionControls");
-      const sectionSelect = document.createElement("div");
-      const questionSection = document.getElementById("questionSection");
-      let image = new Image();
-      let originalWidth = 0; // Store original image width
-      let originalHeight = 0; // Store original height
-      let scaleX = 1; // Scale factor for x coordinates
-      let scaleY = 1; // Scale factor for y coordinates
-      let coords = {
-        student_id: {},
-        questions: {},
-      };
-      let mouseX = 0;
-      let mouseY = 0;
-      let currentQuestion = 1;
-      let currentDigit = 1;
-      let currentOption = 0;
+  <script>
+    const upload = document.getElementById("upload");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const coordsDisplay = document.getElementById("coords");
+    const drawingModeSelector = document.getElementById("drawingMode");
+    const circleRadiusSlider = document.getElementById("circleRadius");
+    const radiusValue = document.getElementById("radiusValue");
+    const currentSection = document.getElementById("currentSection");
+    const sectionInfo = document.getElementById("sectionInfo");
+    const digitInfo = document.getElementById("digitInfo");
+    const optionsPerQuestion = document.getElementById("optionsPerQuestion");
+    const questionControls = document.getElementById("questionControls");
+    const sectionSelect = document.createElement("div");
+    const questionSection = document.getElementById("questionSection");
+    let image = new Image();
+    let originalWidth = 0; // Store original image width
+    let originalHeight = 0; // Store original height
+    let scaleX = 1; // Scale factor for x coordinates
+    let scaleY = 1; // Scale factor for y coordinates
+    let coords = {
+      student_id: {},
+      questions: {},
+    };
+    let mouseX = 0;
+    let mouseY = 0;
+    let currentQuestion = 1;
+    let currentDigit = 1;
+    let currentOption = 0;
 
-      const FIXED_WIDTH = 1029;
-      const FIXED_HEIGHT = 1500;
+    // Hide question controls initially
+    questionControls.style.display = "none";
 
-      // Hide question controls initially
-      questionControls.style.display = "none";
+    // Update section info
+    currentSection.addEventListener("change", () => {
+      updateSectionInfo();
+      questionControls.style.display =
+        currentSection.value === "questions" ? "block" : "none";
+    });
 
-      // Update section info
-      currentSection.addEventListener("change", () => {
-        updateSectionInfo();
-        questionControls.style.display =
-          currentSection.value === "questions" ? "block" : "none";
-      });
-
-      function updateSectionInfo() {
-        const section = currentSection.value;
-        if (section === "student_id") {
-          sectionInfo.textContent =
-            "Marking Student ID bubbles (6 digits, 0-9 each)";
-          digitInfo.textContent = `Current Digit: ${currentDigit} (0-9)`;
-        } else if (section === "questions") {
-          sectionInfo.textContent = `Marking Question ${currentQuestion} bubbles (${optionsPerQuestion.value} options)`;
-          digitInfo.textContent = `Current Option: ${currentOption + 1}/${
-            optionsPerQuestion.value
+    function updateSectionInfo() {
+      const section = currentSection.value;
+      if (section === "student_id") {
+        sectionInfo.textContent =
+          "Marking Student ID bubbles (6 digits, 0-9 each)";
+        digitInfo.textContent = `Current Digit: ${currentDigit} (0-9)`;
+      } else if (section === "questions") {
+        sectionInfo.textContent = `Marking Question ${currentQuestion} bubbles (${optionsPerQuestion.value} options)`;
+        digitInfo.textContent = `Current Option: ${currentOption + 1}/${optionsPerQuestion.value
           }`;
-        } else {
-          const sectionName =
-            section === "student_id" ? "Student ID" : "Paper Code";
-          sectionInfo.textContent = `Marking ${sectionName} bubbles (10 letters, 7 columns each)`;
-          digitInfo.textContent = `Current Letter: ${currentDigit} (${currentOption}/7 columns)`;
-          questionControls.style.display = "none";
+      } else {
+        const sectionName =
+          section === "student_id" ? "Student ID" : "Paper Code";
+        sectionInfo.textContent = `Marking ${sectionName} bubbles (10 letters, 7 columns each)`;
+        digitInfo.textContent = `Current Letter: ${currentDigit} (${currentOption}/7 columns)`;
+        questionControls.style.display = "none";
+      }
+    }
+
+    // Update options per question
+    optionsPerQuestion.addEventListener("change", () => {
+      updateSectionInfo();
+    });
+
+    // Update radius display when slider changes
+    circleRadiusSlider.addEventListener("input", () => {
+      radiusValue.textContent = circleRadiusSlider.value;
+    });
+
+    // Track mouse position
+    canvas.addEventListener("mousemove", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseX = Math.round(e.clientX - rect.left);
+      mouseY = Math.round(e.clientY - rect.top);
+      requestAnimationFrame(redrawCanvas); // Use requestAnimationFrame for smoother updates
+    });
+
+    canvas.addEventListener("mouseleave", () => {
+      mouseX = 0;
+      mouseY = 0;
+      redrawCanvas();
+    });
+
+    // Fix canvas DPI scaling
+    function fixCanvasDPI() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+
+      // Set display size
+      canvas.style.width = rect.width + "px";
+      canvas.style.height = rect.height + "px";
+
+      // Set actual size in memory
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+
+      // Scale context to ensure correct drawing operations
+      ctx.scale(dpr, dpr);
+    }
+
+    // Image upload handler
+    upload.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        image.onload = () => {
+          // Store original dimensions
+          originalWidth = image.width;
+          originalHeight = image.height;
+
+          const maxHeight = window.innerHeight * 0.85;
+          const maxWidth = window.innerWidth * 0.7;
+
+          let newWidth = image.width;
+          let newHeight = image.height;
+
+          // Maintain aspect ratio while scaling
+          const aspectRatio = image.width / image.height;
+
+          if (newHeight > maxHeight) {
+            newHeight = maxHeight;
+            newWidth = newHeight * aspectRatio;
+          }
+
+          if (newWidth > maxWidth) {
+            newWidth = maxWidth;
+            newHeight = newWidth / aspectRatio;
+          }
+
+          // Set canvas size
+          canvas.style.width = newWidth + "px";
+          canvas.style.height = newHeight + "px";
+
+          // Fix DPI scaling
+          fixCanvasDPI();
+
+          // Calculate scale factors
+          scaleX = canvas.width / originalWidth;
+          scaleY = canvas.height / originalHeight;
+
+          // Enable image smoothing for better quality
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+
+          // Draw the image
+          ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        };
+        image.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    canvas.addEventListener("click", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      // Get coordinates relative to current canvas size
+      const x = Math.round(e.clientX - rect.left);
+      const y = Math.round(e.clientY - rect.top);
+
+      // Convert to original image coordinates
+      const originalX = Math.round(x / scaleX);
+      const originalY = Math.round(y / scaleY);
+
+      const radius = parseInt(circleRadiusSlider.value);
+      const section = currentSection.value;
+
+      const point = {
+        x: originalX, // Store original coordinates
+        y: originalY,
+        r: radius,
+      };
+
+      if (section === "questions") {
+        const questionSection =
+          document.getElementById("questionSection").value;
+        let startQuestion;
+        switch (questionSection) {
+          case "1-13":
+            startQuestion = 1;
+            break;
+          case "14-29":
+            startQuestion = 14;
+            break;
+          case "30-49":
+            startQuestion = 30;
+            break;
+          case "50-70":
+            startQuestion = 50;
+            break;
         }
-      }
 
-      // Update options per question
-      optionsPerQuestion.addEventListener("change", () => {
-        updateSectionInfo();
-      });
+        if (!coords.questions[`question_${currentQuestion}`]) {
+          coords.questions[`question_${currentQuestion}`] = [];
+        }
+        coords.questions[`question_${currentQuestion}`].push(point);
+        currentOption++;
 
-      // Update radius display when slider changes
-      circleRadiusSlider.addEventListener("input", () => {
-        radiusValue.textContent = circleRadiusSlider.value;
-      });
-
-      // Track mouse position
-      canvas.addEventListener("mousemove", (e) => {
-        const rect = canvas.getBoundingClientRect();
-        mouseX = Math.round(e.clientX - rect.left);
-        mouseY = Math.round(e.clientY - rect.top);
-        requestAnimationFrame(redrawCanvas); // Use requestAnimationFrame for smoother updates
-      });
-
-      canvas.addEventListener("mouseleave", () => {
-        mouseX = 0;
-        mouseY = 0;
-        redrawCanvas();
-      });
-
-      // Update fixCanvasDPI function
-      function fixCanvasDPI() {
-        const dpr = window.devicePixelRatio || 1;
-        const rect = canvas.getBoundingClientRect();
-
-        // Set the actual size in memory
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-
-        // Scale all drawing operations by the dpr
-        ctx.scale(dpr, dpr);
-
-        // Enable image smoothing for better quality
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = "high";
-      }
-
-      // Update image upload handler
-      upload.addEventListener("change", (e) => {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-        reader.onload = function (event) {
-          image.onload = () => {
-            // Store original dimensions
-            originalWidth = FIXED_WIDTH;
-            originalHeight = FIXED_HEIGHT;
-
-            // Calculate scaling to fit in viewport while maintaining aspect ratio
-            const maxHeight = window.innerHeight * 0.85;
-            const maxWidth = window.innerWidth * 0.7;
-
-            // Calculate scale to fit either width or height
-            const scaleWidth = maxWidth / FIXED_WIDTH;
-            const scaleHeight = maxHeight / FIXED_HEIGHT;
-            const scale = Math.min(scaleWidth, scaleHeight);
-
-            // Set canvas display size
-            const displayWidth = Math.round(FIXED_WIDTH * scale);
-            const displayHeight = Math.round(FIXED_HEIGHT * scale);
-
-            // Set canvas size directly
-            canvas.style.width = `${displayWidth}px`;
-            canvas.style.height = `${displayHeight}px`;
-
-            // Fix DPI scaling
-            fixCanvasDPI();
-
-            // Calculate scale factors for coordinate conversion
-            scaleX = canvas.width / FIXED_WIDTH;
-            scaleY = canvas.height / FIXED_HEIGHT;
-
-            // Update image dimensions display
-            document.getElementById(
-              "imageDimensions"
-            ).textContent = `${FIXED_WIDTH} x ${FIXED_HEIGHT} pixels (Display: ${displayWidth} x ${displayHeight})`;
-
-            // Clear the canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw the image with proper scaling
-            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-            // Redraw any existing markers
-            redrawCanvas();
-          };
-          image.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
-
-      canvas.addEventListener("click", (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const x = Math.round(e.clientX - rect.left);
-        const y = Math.round(e.clientY - rect.top);
-
-        // Convert to fixed image coordinates
-        const originalX = Math.round((x / rect.width) * FIXED_WIDTH);
-        const originalY = Math.round((y / rect.height) * FIXED_HEIGHT);
-
-        const radius = parseInt(circleRadiusSlider.value);
-        const section = currentSection.value;
-
-        const point = {
-          x: originalX, // Store original coordinates
-          y: originalY,
-          r: radius,
-        };
-
-        if (section === "questions") {
-          const questionSection =
-            document.getElementById("questionSection").value;
-          let startQuestion;
-          switch (questionSection) {
-            case "1-13":
-              startQuestion = 1;
-              break;
-            case "14-29":
-              startQuestion = 14;
-              break;
-            case "30-49":
-              startQuestion = 30;
-              break;
-            case "50-70":
-              startQuestion = 50;
-              break;
-          }
-
-          if (!coords.questions[`question_${currentQuestion}`]) {
-            coords.questions[`question_${currentQuestion}`] = [];
-          }
-          coords.questions[`question_${currentQuestion}`].push(point);
-          currentOption++;
-
-          if (currentOption >= parseInt(optionsPerQuestion.value)) {
-            currentQuestion++;
-            currentOption = 0;
-            updateSectionInfo();
-          } else {
-            updateSectionInfo();
-          }
-        } else if (section === "student_id" || section === "paper_code") {
-          // Handle Student ID and Paper Code marking
-          const letterKey = `letter_${currentDigit}`;
-          if (!coords[section]) {
-            coords[section] = {};
-          }
-          if (!coords[section][letterKey]) {
-            coords[section][letterKey] = [];
-          }
-
-          // Check if we've marked 7 positions in the current letter
-          if (coords[section][letterKey].length >= 7) {
-            // Move to next letter
-            currentDigit++;
-            if (currentDigit > 10) {
-              currentDigit = 1;
-              // Switch to paper code or questions when done
-              if (section === "student_id") {
-                currentSection.value = "paper_code";
-              } else {
-                currentSection.value = "questions";
-              }
-            }
-            // Create new letter array if needed
-            const newLetterKey = `letter_${currentDigit}`;
-            if (!coords[section][newLetterKey]) {
-              coords[section][newLetterKey] = [];
-            }
-            coords[section][newLetterKey].push(point);
-          } else {
-            // Add point to current letter
-            coords[section][letterKey].push(point);
-          }
-
+        if (currentOption >= parseInt(optionsPerQuestion.value)) {
+          currentQuestion++;
+          currentOption = 0;
+          updateSectionInfo();
+        } else {
           updateSectionInfo();
         }
-
-        redrawCanvas();
-        updateCoordsDisplay();
-      });
-
-      function drawMarker(point, color) {
-        ctx.save();
-        ctx.beginPath();
-
-        // Ensure perfect circles by using equal scaling
-        const scale = Math.min(scaleX, scaleY);
-        const scaledX = point.x * scale;
-        const scaledY = point.y * scale;
-        const scaledR = point.r * scale;
-
-        ctx.arc(scaledX, scaledY, scaledR, 0, Math.PI * 2);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      function redrawCanvas() {
-        const dpr = window.devicePixelRatio || 1;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        if (image.src) {
-          ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      } else if (section === "student_id" || section === "paper_code") {
+        // Handle Student ID and Paper Code marking
+        const letterKey = `letter_${currentDigit}`;
+        if (!coords[section]) {
+          coords[section] = {};
+        }
+        if (!coords[section][letterKey]) {
+          coords[section][letterKey] = [];
         }
 
-        // Draw all markers
-        ["student_id", "paper_code"].forEach((section) => {
-          if (coords[section]) {
-            Object.entries(coords[section]).forEach(([letter, points]) => {
-              points.forEach((point) => {
-                drawMarker(point, "red");
-              });
-            });
+        // Check if we've marked 7 positions in the current letter
+        if (coords[section][letterKey].length >= 7) {
+          // Move to next letter
+          currentDigit++;
+          if (currentDigit > 10) {
+            currentDigit = 1;
+            // Switch to paper code or questions when done
+            if (section === "student_id") {
+              currentSection.value = "paper_code";
+            } else {
+              currentSection.value = "questions";
+            }
           }
-        });
+          // Create new letter array if needed
+          const newLetterKey = `letter_${currentDigit}`;
+          if (!coords[section][newLetterKey]) {
+            coords[section][newLetterKey] = [];
+          }
+          coords[section][newLetterKey].push(point);
+        } else {
+          // Add point to current letter
+          coords[section][letterKey].push(point);
+        }
 
-        if (coords.questions) {
-          Object.entries(coords.questions).forEach(([question, points]) => {
+        updateSectionInfo();
+      }
+
+      redrawCanvas();
+      updateCoordsDisplay();
+    });
+
+    function drawMarker(point, color) {
+      ctx.save();
+      ctx.beginPath();
+
+      // Ensure perfect circles by using equal scaling
+      const scale = Math.min(scaleX, scaleY);
+      const scaledX = point.x * scale;
+      const scaledY = point.y * scale;
+      const scaledR = point.r * scale;
+
+      ctx.arc(scaledX, scaledY, scaledR, 0, Math.PI * 2);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function redrawCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (image.src) {
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      }
+
+      // Draw all markers
+      ["student_id", "paper_code"].forEach((section) => {
+        if (coords[section]) {
+          Object.entries(coords[section]).forEach(([letter, points]) => {
             points.forEach((point) => {
               drawMarker(point, "red");
             });
           });
         }
-
-        // Draw hover preview
-        if (mouseX && mouseY) {
-          const radius = parseInt(circleRadiusSlider.value);
-          // Convert mouse coordinates back to original scale
-          const originalX = mouseX / scaleX;
-          const originalY = mouseY / scaleY;
-          drawMarker(
-            { x: originalX, y: originalY, r: radius },
-            "rgba(255, 0, 0, 0.5)"
-          );
-        }
-      }
-
-      function downloadJSON() {
-        const blob = new Blob([JSON.stringify(coords, null, 2)], {
-          type: "application/json",
-        });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.download = "bubble_map.json";
-        link.href = url;
-        link.click();
-      }
-
-      function resetCanvas() {
-        coords = {
-          student_id: {},
-          questions: {},
-        };
-        currentQuestion = 1;
-        currentDigit = 1;
-        currentOption = 0;
-        updateSectionInfo();
-        updateCoordsDisplay();
-        redrawCanvas();
-      }
-
-      // Make coordinates display editable and update canvas on change
-      coordsDisplay.addEventListener("input", () => {
-        try {
-          const newCoords = JSON.parse(coordsDisplay.textContent);
-          if (isValidCoordsStructure(newCoords)) {
-            coords = newCoords;
-            // Recalculate scale factors if image is loaded
-            if (image.src) {
-              scaleX = canvas.width / originalWidth;
-              scaleY = canvas.height / originalHeight;
-            }
-            redrawCanvas();
-          }
-        } catch (e) {
-          // Invalid JSON, ignore
-        }
       });
 
-      // Validate coordinate structure
-      function isValidCoordsStructure(obj) {
-        if (!obj || typeof obj !== "object") return false;
-        if (!obj.student_id || typeof obj.student_id !== "object") return false;
-        if (!obj.questions || typeof obj.questions !== "object") return false;
-
-        // Validate student_id structure
-        for (const key in obj.student_id) {
-          if (!key.startsWith("letter_")) return false;
-          if (!Array.isArray(obj.student_id[key])) return false;
-          for (const point of obj.student_id[key]) {
-            if (!point.x || !point.y || !point.r) return false;
-          }
-        }
-
-        // Validate questions structure
-        for (const key in obj.questions) {
-          if (!key.startsWith("question_")) return false;
-          if (!Array.isArray(obj.questions[key])) return false;
-          for (const point of obj.questions[key]) {
-            if (!point.x || !point.y || !point.r) return false;
-          }
-        }
-
-        return true;
-      }
-
-      // Update coordinates display
-      function updateCoordsDisplay() {
-        coordsDisplay.textContent = JSON.stringify(coords, null, 2);
-      }
-
-      // Helper function to generate complete coordinates
-      function generateCompleteCoordinates() {
-        const section = document.getElementById("questionSection").value;
-        let startQuestion, endQuestion, baseX;
-        const startY = 258;
-        const yIncrement = 13;
-
-        // Define x-coordinates for each section
-        const sectionCoords = {
-          "1-13": [53, 63, 74, 85, 95, 105],
-          "14-29": [144, 154, 165, 176, 186, 196],
-          "30-49": [234, 244, 255, 266, 276, 286],
-          "50-70": [324, 334, 345, 356, 366, 376],
-        };
-
-        switch (section) {
-          case "1-13":
-            startQuestion = 1;
-            endQuestion = 13;
-            break;
-          case "14-29":
-            startQuestion = 14;
-            endQuestion = 29;
-            break;
-          case "30-49":
-            startQuestion = 30;
-            endQuestion = 49;
-            break;
-          case "50-70":
-            startQuestion = 50;
-            endQuestion = 70;
-            break;
-        }
-
-        baseX = sectionCoords[section];
-
-        let completeCoords = {
-          student_id: {},
-          questions: {},
-        };
-
-        // Generate for selected question range
-        for (let q = startQuestion; q <= endQuestion; q++) {
-          completeCoords.questions[`question_${q}`] = baseX.map((x, i) => ({
-            x: x,
-            y: startY + yIncrement * (q - startQuestion),
-            r: 3,
-          }));
-        }
-
-        // Merge with existing coordinates if any
-        if (coords.questions) {
-          completeCoords.questions = {
-            ...coords.questions,
-            ...completeCoords.questions,
-          };
-        }
-
-        coordsDisplay.textContent = JSON.stringify(completeCoords, null, 2);
-        coords = completeCoords;
-        redrawCanvas();
-      }
-
-      // Helper function to generate ID coordinates (Student ID or Paper Code)
-      function generateIDCoordinates(type) {
-        // X-coordinates for the 7 columns
-        const baseX =
-          type === "student_id"
-            ? [37, 52, 66, 80, 95, 110, 124] // Student ID x-coordinates
-            : [290, 305, 319, 334, 346, 360, 375]; // Paper Code x-coordinates (updated)
-
-        // Y-coordinates for the 10 letters (rows)
-        const yCoords =
-          type === "student_id"
-            ? [
-                134, // letter_1
-                144, // letter_2
-                154, // letter_3
-                164, // letter_4
-                174, // letter_5
-                184, // letter_6
-                194, // letter_7
-                204, // letter_8
-                214, // letter_9
-                224, // letter_10
-              ]
-            : [
-                134, // letter_1
-                145, // letter_2
-                155, // letter_3
-                165, // letter_4
-                175, // letter_5
-                185, // letter_6
-                195, // letter_7
-                205, // letter_8
-                215, // letter_9
-                225, // letter_10
-              ];
-
-        let idCoords = {};
-
-        // Generate coordinates for each letter (1-10)
-        for (let letter = 1; letter <= 10; letter++) {
-          const letterKey = `letter_${letter}`;
-          idCoords[letterKey] = [];
-
-          // Generate all 7 column positions for this letter
-          baseX.forEach((x) => {
-            idCoords[letterKey].push({
-              x: x,
-              y: yCoords[letter - 1],
-              r: 3,
-            });
+      if (coords.questions) {
+        Object.entries(coords.questions).forEach(([question, points]) => {
+          points.forEach((point) => {
+            drawMarker(point, "red");
           });
-        }
-
-        // Update the coordinates while preserving other sections
-        let newCoords = {
-          student_id:
-            type === "student_id" ? idCoords : coords.student_id || {},
-          paper_code:
-            type === "paper_code" ? idCoords : coords.paper_code || {},
-          questions: coords.questions || {},
-        };
-
-        coords = newCoords;
-        coordsDisplay.textContent = JSON.stringify(coords, null, 2);
-        redrawCanvas();
+        });
       }
 
-      // Rename existing function and update its call
-      function generateQuestionCoordinates() {
-        const section = document.getElementById("questionSection").value;
-        let startQuestion, endQuestion;
-        const yStart = 684; // New starting y-coordinate
-        const yIncrement = 36; // New y increment (approximately 720-684)
-
-        // Define x-coordinates for each section
-        const sectionCoords = {
-          "1-13": [85, 112, 142, 169, 199, 229], // New x-coordinates for section 1-13
-          "14-29": [144, 154, 165, 176, 186, 196],
-          "30-49": [234, 244, 255, 266, 276, 286],
-          "50-70": [324, 334, 345, 356, 366, 376],
-        };
-
-        switch (section) {
-          case "1-13":
-            startQuestion = 1;
-            endQuestion = 13;
-            break;
-          case "14-29":
-            startQuestion = 14;
-            endQuestion = 29;
-            break;
-          case "30-49":
-            startQuestion = 30;
-            endQuestion = 49;
-            break;
-          case "50-70":
-            startQuestion = 50;
-            endQuestion = 70;
-            break;
-        }
-
-        baseX = sectionCoords[section];
-
-        let completeCoords = {
-          student_id: coords.student_id || {},
-          paper_code: coords.paper_code || {},
-          questions: {},
-        };
-
-        // Generate for selected question range with new radius
-        for (let q = startQuestion; q <= endQuestion; q++) {
-          completeCoords.questions[`question_${q}`] = baseX.map((x, i) => ({
-            x: x,
-            y: yStart + yIncrement * (q - startQuestion),
-            r: 11, // New larger radius
-          }));
-        }
-
-        // Merge with existing coordinates
-        if (coords.questions) {
-          completeCoords.questions = {
-            ...coords.questions,
-            ...completeCoords.questions,
-          };
-        }
-
-        coords = completeCoords;
-        coordsDisplay.textContent = JSON.stringify(coords, null, 2);
-        redrawCanvas();
+      // Draw hover preview
+      if (mouseX && mouseY) {
+        const radius = parseInt(circleRadiusSlider.value);
+        // Convert mouse coordinates back to original scale
+        const originalX = mouseX / scaleX;
+        const originalY = mouseY / scaleY;
+        drawMarker(
+          { x: originalX, y: originalY, r: radius },
+          "rgba(255, 0, 0, 0.5)"
+        );
       }
+    }
 
-      // Update the circle radius slider default
-      circleRadiusSlider.value = 11;
-      radiusValue.textContent = "11";
+    function downloadJSON() {
+      const blob = new Blob([JSON.stringify(coords, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = "bubble_map.json";
+      link.href = url;
+      link.click();
+    }
 
-      // Update window resize handler
-      window.addEventListener("resize", () => {
-        if (image.src) {
-          const maxHeight = window.innerHeight * 0.85;
-          const maxWidth = window.innerWidth * 0.7;
+    function resetCanvas() {
+      coords = {
+        student_id: {},
+        questions: {},
+      };
+      currentQuestion = 1;
+      currentDigit = 1;
+      currentOption = 0;
+      updateSectionInfo();
+      updateCoordsDisplay();
+      redrawCanvas();
+    }
 
-          // Calculate scale to fit either width or height
-          const scaleWidth = maxWidth / FIXED_WIDTH;
-          const scaleHeight = maxHeight / FIXED_HEIGHT;
-          const scale = Math.min(scaleWidth, scaleHeight);
-
-          const displayWidth = Math.round(FIXED_WIDTH * scale);
-          const displayHeight = Math.round(FIXED_HEIGHT * scale);
-
-          // Update canvas size
-          canvas.style.width = `${displayWidth}px`;
-          canvas.style.height = `${displayHeight}px`;
-
-          fixCanvasDPI();
-
-          // Update scale factors
-          scaleX = canvas.width / FIXED_WIDTH;
-          scaleY = canvas.height / FIXED_HEIGHT;
-
-          // Update image dimensions display
-          document.getElementById(
-            "imageDimensions"
-          ).textContent = `${FIXED_WIDTH} x ${FIXED_HEIGHT} pixels (Display: ${displayWidth} x ${displayHeight})`;
-
-          // Redraw everything
+    // Make coordinates display editable and update canvas on change
+    coordsDisplay.addEventListener("input", () => {
+      try {
+        const newCoords = JSON.parse(coordsDisplay.textContent);
+        if (isValidCoordsStructure(newCoords)) {
+          coords = newCoords;
+          // Recalculate scale factors if image is loaded
+          if (image.src) {
+            scaleX = canvas.width / originalWidth;
+            scaleY = canvas.height / originalHeight;
+          }
           redrawCanvas();
         }
-      });
+      } catch (e) {
+        // Invalid JSON, ignore
+      }
+    });
 
-      // Initialize section info
-      updateSectionInfo();
-    </script>
-  </body>
+    // Validate coordinate structure
+    function isValidCoordsStructure(obj) {
+      if (!obj || typeof obj !== "object") return false;
+      if (!obj.student_id || typeof obj.student_id !== "object") return false;
+      if (!obj.questions || typeof obj.questions !== "object") return false;
+
+      // Validate student_id structure
+      for (const key in obj.student_id) {
+        if (!key.startsWith("letter_")) return false;
+        if (!Array.isArray(obj.student_id[key])) return false;
+        for (const point of obj.student_id[key]) {
+          if (!point.x || !point.y || !point.r) return false;
+        }
+      }
+
+      // Validate questions structure
+      for (const key in obj.questions) {
+        if (!key.startsWith("question_")) return false;
+        if (!Array.isArray(obj.questions[key])) return false;
+        for (const point of obj.questions[key]) {
+          if (!point.x || !point.y || !point.r) return false;
+        }
+      }
+
+      return true;
+    }
+
+    // Update coordinates display
+    function updateCoordsDisplay() {
+      coordsDisplay.textContent = JSON.stringify(coords, null, 2);
+    }
+
+    // Helper function to generate complete coordinates
+    function generateCompleteCoordinates() {
+      const section = document.getElementById("questionSection").value;
+      let startQuestion, endQuestion, baseX;
+      const startY = 258;
+      const yIncrement = 13;
+
+      // Define x-coordinates for each section
+      const sectionCoords = {
+        "1-13": [53, 63, 74, 85, 95, 105],
+        "14-29": [144, 154, 165, 176, 186, 196],
+        "30-49": [234, 244, 255, 266, 276, 286],
+        "50-70": [324, 334, 345, 356, 366, 376],
+      };
+
+      switch (section) {
+        case "1-13":
+          startQuestion = 1;
+          endQuestion = 13;
+          break;
+        case "14-29":
+          startQuestion = 14;
+          endQuestion = 29;
+          break;
+        case "30-49":
+          startQuestion = 30;
+          endQuestion = 49;
+          break;
+        case "50-70":
+          startQuestion = 50;
+          endQuestion = 70;
+          break;
+      }
+
+      baseX = sectionCoords[section];
+
+      let completeCoords = {
+        student_id: {},
+        questions: {},
+      };
+
+      // Generate for selected question range
+      for (let q = startQuestion; q <= endQuestion; q++) {
+        completeCoords.questions[`question_${q}`] = baseX.map((x, i) => ({
+          x: x,
+          y: startY + yIncrement * (q - startQuestion),
+          r: 3,
+        }));
+      }
+
+      // Merge with existing coordinates if any
+      if (coords.questions) {
+        completeCoords.questions = {
+          ...coords.questions,
+          ...completeCoords.questions,
+        };
+      }
+
+      coordsDisplay.textContent = JSON.stringify(completeCoords, null, 2);
+      coords = completeCoords;
+      redrawCanvas();
+    }
+
+    // Helper function to generate ID coordinates (Student ID or Paper Code)
+    function generateIDCoordinates(type) {
+      // X-coordinates for the 7 columns
+      const baseX =
+        type === "student_id"
+          ? [59,106,157,205,255,304,351] // Student ID x-coordinates
+          : [926,973,1021,1071,1119,1170,1218]; // Paper Code x-coordinates (updated)
+
+      // Y-coordinates for the 10 letters (rows)
+      const yCoords =
+        type === "student_id"
+          ? [
+            428, // letter_1
+            462, // letter_2
+            496, // letter_3
+            530, // letter_4
+            564, // letter_5
+            598, // letter_6
+            632, // letter_7
+            666, // letter_8
+            700, // letter_9
+            734, // letter_10
+          ]
+          : [
+          428, // letter_1
+            462, // letter_2
+            496, // letter_3
+            530, // letter_4
+            564, // letter_5
+            598, // letter_6
+            632, // letter_7
+            666, // letter_8
+            700, // letter_9
+            734, // letter_10
+          ];
+
+      let idCoords = {};
+
+      // Generate coordinates for each letter (1-10)
+      for (let letter = 1; letter <= 10; letter++) {
+        const letterKey = `letter_${letter}`;
+        idCoords[letterKey] = [];
+
+        // Generate all 7 column positions for this letter
+        baseX.forEach((x) => {
+          idCoords[letterKey].push({
+            x: x,
+            y: yCoords[letter - 1],
+            r: 12,
+          });
+        });
+      }
+
+      // Update the coordinates while preserving other sections
+      let newCoords = {
+        student_id:
+          type === "student_id" ? idCoords : coords.student_id || {},
+        paper_code:
+          type === "paper_code" ? idCoords : coords.paper_code || {},
+        questions: coords.questions || {},
+      };
+
+      coords = newCoords;
+      coordsDisplay.textContent = JSON.stringify(coords, null, 2);
+      redrawCanvas();
+    }
+
+    // Rename existing function and update its call
+    function generateQuestionCoordinates() {
+      const section = document.getElementById("questionSection").value;
+      let startQuestion, endQuestion, baseX, baseY;
+      
+      // Define x-coordinates for each section
+      const sectionXCoords = {
+        "1-13": [105, 140, 176, 212, 248, 283],
+        "14-29": [337, 366, 395, 424, 453, 482],
+        "30-49": [590, 619, 648, 677, 706, 735],
+        "50-70": [843, 872, 901, 930, 959, 988],
+      };
+
+      const sectionYCoords = {
+        "1-13": [850, 894, 938, 982, 1028, 1072, 1117, 1161, 1205, 1249, 1293, 1342, 1387],
+        "14-29": [850, 894, 938, 982, 1028, 1072, 1117, 1161, 1205, 1249, 1293, 1342, 1387],
+        "30-49": [850, 894, 938, 982, 1028, 1072, 1117, 1161, 1205, 1249, 1293, 1342, 1387],
+        "50-70": [850, 894, 938, 982, 1028, 1072, 1117, 1161, 1205, 1249, 1293, 1342, 1387],
+      };
+
+      switch (section) {
+        case "1-13":
+          startQuestion = 1;
+          endQuestion = 13;
+          break;
+        case "14-29":
+          startQuestion = 14;
+          endQuestion = 29;
+          break;
+        case "30-49":
+          startQuestion = 30;
+          endQuestion = 49;
+          break;
+        case "50-70":
+          startQuestion = 50;
+          endQuestion = 70;
+          break;
+      }
+
+      baseX = sectionXCoords[section];
+      baseY = sectionYCoords[section];
+
+      let completeCoords = {
+        student_id: coords.student_id || {},
+        paper_code: coords.paper_code || {},
+        questions: {},
+      };
+
+      // Generate for selected question range
+      for (let q = startQuestion; q <= endQuestion; q++) {
+        const qY = baseY[q - startQuestion];
+        completeCoords.questions[`question_${q}`] = baseX.map((x, i) => ({
+          x: x,
+          y: qY,
+          r: 11,
+        }));
+      }
+
+      // Merge with existing coordinates
+      if (coords.questions) {
+        completeCoords.questions = {
+          ...coords.questions,
+          ...completeCoords.questions,
+        };
+      }
+
+      coords = completeCoords;
+      coordsDisplay.textContent = JSON.stringify(coords, null, 2);
+      redrawCanvas();
+    }
+
+    // Handle window resize
+    window.addEventListener("resize", () => {
+      if (image.src) {
+        const maxHeight = window.innerHeight * 0.85;
+        const maxWidth = window.innerWidth * 0.7;
+
+        let newWidth = originalWidth;
+        let newHeight = originalHeight;
+
+        const aspectRatio = originalWidth / originalHeight;
+
+        if (newHeight > maxHeight) {
+          newHeight = maxHeight;
+          newWidth = newHeight * aspectRatio;
+        }
+
+        if (newWidth > maxWidth) {
+          newWidth = maxWidth;
+          newHeight = newWidth / aspectRatio;
+        }
+
+        canvas.style.width = newWidth + "px";
+        canvas.style.height = newHeight + "px";
+
+        fixCanvasDPI();
+
+        scaleX = canvas.width / originalWidth;
+        scaleY = canvas.height / originalHeight;
+
+        redrawCanvas();
+      }
+    });
+
+    // Initialize section info
+    updateSectionInfo();
+  </script>
+</body>
+
 </html>
