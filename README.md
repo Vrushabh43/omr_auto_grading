@@ -34,6 +34,7 @@ cd omr_grading
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
+#omr_env\Scripts\activate.bat
 ```
 
 3. Install required packages:
@@ -144,3 +145,4 @@ For optimal results, place the ArUco markers at the four corners of your answer 
 ## Contributing
 
 [Add contribution guidelines if applicable] 
+
