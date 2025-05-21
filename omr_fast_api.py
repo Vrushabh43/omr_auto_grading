@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.responses import JSONResponse
 import cv2
 import cv2.aruco as aruco
@@ -7,13 +7,15 @@ from imutils.perspective import four_point_transform
 import json
 import os
 from io import BytesIO
+from typing import Optional
+from pydantic import BaseModel
 
 app = FastAPI()
 
 # Load static JSON once on startup
 JSON_PATH = "assets/omr_coordinates.json"
 with open(JSON_PATH, "r") as f:
-    OMR_COORDINATES = json.load(f)
+    DEFAULT_OMR_COORDINATES = json.load(f)
 
 # Your constants, thresholds, debug flags
 FILL_THRESHOLD = 0.85
@@ -68,7 +70,10 @@ def detect_aruco_and_warp(image):
         raise ValueError("Exactly 4 ArUco markers with IDs 1,2,3,4 are required.")
 
 @app.post("/process-omr/")
-async def process_omr(omr_image: UploadFile = File(...)):
+async def process_omr(
+    omr_image: UploadFile = File(...),
+    coordinates: Optional[str] = Form(None)
+):
     try:
         # Read image bytes from upload
         contents = await omr_image.read()
@@ -76,6 +81,14 @@ async def process_omr(omr_image: UploadFile = File(...)):
         image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
         if image is None:
             raise HTTPException(status_code=400, detail="Invalid image file")
+
+        # Use provided coordinates if available, otherwise use default
+        omr_coordinates = DEFAULT_OMR_COORDINATES
+        if coordinates:
+            try:
+                omr_coordinates = json.loads(coordinates)
+            except json.JSONDecodeError:
+                raise HTTPException(status_code=400, detail="Invalid JSON coordinates format")
 
         # Detect and warp
         warped_img = detect_aruco_and_warp(image)
@@ -92,7 +105,7 @@ async def process_omr(omr_image: UploadFile = File(...)):
         }
 
         # Student ID
-        for letter_key, bubbles in OMR_COORDINATES.get("student_id", {}).items():
+        for letter_key, bubbles in omr_coordinates.get("student_id", {}).items():
             max_confidence = 0
             selected_digit = "X"
             for i, bubble in enumerate(bubbles):
@@ -108,7 +121,7 @@ async def process_omr(omr_image: UploadFile = File(...)):
             results["confidence_scores"][f"student_id_{letter_key}"] = max_confidence
 
         # Paper Code
-        for letter_key, bubbles in OMR_COORDINATES.get("paper_code", {}).items():
+        for letter_key, bubbles in omr_coordinates.get("paper_code", {}).items():
             max_confidence = 0
             selected_digit = "X"
             for i, bubble in enumerate(bubbles):
@@ -124,7 +137,7 @@ async def process_omr(omr_image: UploadFile = File(...)):
             results["confidence_scores"][f"paper_code_{letter_key}"] = max_confidence
 
         # Questions
-        for q_key, q_bubbles in OMR_COORDINATES.get("questions", {}).items():
+        for q_key, q_bubbles in omr_coordinates.get("questions", {}).items():
             marked_answers = []
             confidences = []
             for i, bubble in enumerate(q_bubbles):
