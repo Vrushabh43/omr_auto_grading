@@ -9,6 +9,7 @@ import os
 from io import BytesIO
 from typing import Optional
 from pydantic import BaseModel
+import base64
 
 app = FastAPI()
 
@@ -68,6 +69,40 @@ def detect_aruco_and_warp(image):
         return warped_resized
     else:
         raise ValueError("Exactly 4 ArUco markers with IDs 1,2,3,4 are required.")
+
+def get_image_base64(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode('utf-8')
+
+def generate_debug_image(img, thresh, omr_coordinates, confidence_threshold):
+    debug_img = img.copy()
+    # Draw student ID bubbles
+    for letter_key, bubbles in omr_coordinates.get("student_id", {}).items():
+        for i, bubble in enumerate(bubbles):
+            x, y, r = bubble["x"], bubble["y"], bubble["r"]
+            is_filled_bubble, confidence = is_filled(thresh, x, y, r)
+            color = (0, 255, 0) if is_filled_bubble and confidence >= confidence_threshold else (0, 0, 255)
+            cv2.circle(debug_img, (x, y), r, color, 2)
+            cv2.putText(debug_img, f"{i}", (x - r, y - r - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+            cv2.putText(debug_img, f"{confidence:.2f}", (x - r, y - r - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+    # Draw paper code bubbles
+    for letter_key, bubbles in omr_coordinates.get("paper_code", {}).items():
+        for i, bubble in enumerate(bubbles):
+            x, y, r = bubble["x"], bubble["y"], bubble["r"]
+            is_filled_bubble, confidence = is_filled(thresh, x, y, r)
+            color = (0, 255, 0) if is_filled_bubble and confidence >= confidence_threshold else (0, 0, 255)
+            cv2.circle(debug_img, (x, y), r, color, 2)
+            cv2.putText(debug_img, f"{i}", (x - r, y - r - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+            cv2.putText(debug_img, f"{confidence:.2f}", (x - r, y - r - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+    # Draw question bubbles
+    for q_key, q_bubbles in omr_coordinates.get("questions", {}).items():
+        for i, bubble in enumerate(q_bubbles):
+            x, y, r = bubble["x"], bubble["y"], bubble["r"]
+            is_filled_bubble, confidence = is_filled(thresh, x, y, r)
+            color = (0, 255, 0) if is_filled_bubble and confidence >= confidence_threshold else (0, 0, 255)
+            cv2.circle(debug_img, (x, y), r, color, 2)
+            cv2.putText(debug_img, f"{confidence:.2f}", (x - r, y - r - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+    return debug_img
 
 @app.post("/process-omr/")
 async def process_omr(
@@ -137,14 +172,16 @@ async def process_omr(
             results["confidence_scores"][f"paper_code_{letter_key}"] = max_confidence
 
         # Questions
-        for q_key, q_bubbles in omr_coordinates.get("questions", {}).items():
+        for i in range(1, 71):
+            q_key = f"question_{i}"
+            q_bubbles = omr_coordinates.get("questions", {}).get(q_key, [])
             marked_answers = []
             confidences = []
-            for i, bubble in enumerate(q_bubbles):
+            for j, bubble in enumerate(q_bubbles):
                 x, y, r = bubble["x"], bubble["y"], bubble["r"]
                 is_filled_bubble, confidence = is_filled(thresh, x, y, r)
                 if is_filled_bubble and confidence >= CONFIDENCE_THRESHOLD:
-                    marked_answers.append(chr(65 + i))
+                    marked_answers.append(chr(65 + j))
                     confidences.append(confidence)
             if not marked_answers:
                 results["answers"][q_key] = []
@@ -152,6 +189,15 @@ async def process_omr(
             else:
                 results["answers"][q_key] = marked_answers
                 results["confidence_scores"][q_key] = max(confidences)
+
+        print("Question keys:", list(omr_coordinates.get("questions", {}).keys()))
+
+        totalQuestions = len(results["answers"])
+        answeredQuestions = len([q for q in results["answers"] if results["answers"][q]])
+
+        debug_img = generate_debug_image(warped_img, thresh, omr_coordinates, CONFIDENCE_THRESHOLD)
+        _, buffer = cv2.imencode('.jpg', debug_img)
+        results["debug_image_base64"] = base64.b64encode(buffer).decode('utf-8')
 
         return JSONResponse(content=results)
 
