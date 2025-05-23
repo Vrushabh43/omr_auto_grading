@@ -192,8 +192,9 @@ async def process_omr(
 
         print("Question keys:", list(omr_coordinates.get("questions", {}).keys()))
 
-        totalQuestions = len(results["answers"])
-        answeredQuestions = len([q for q in results["answers"] if results["answers"][q]])
+        results["totalQuestions"] = len(results["answers"])
+        results["answeredQuestions"] = len([q for q in results["answers"] if results["answers"][q]])
+        # You can add correct/incorrect logic here as needed
 
         debug_img = generate_debug_image(warped_img, thresh, omr_coordinates, CONFIDENCE_THRESHOLD)
         _, buffer = cv2.imencode('.jpg', debug_img)
